@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Discord Say Bot</title>
+<style>
+  :root {
+    --bg: #1e1f22;
+    --panel: #2b2d31;
+    --panel-2: #313338;
+    --field: #1e1f22;
+    --border: #3f4147;
+    --text: #dbdee1;
+    --muted: #949ba4;
+    --accent: #5865f2;
+    --accent-hover: #4752c4;
+    --danger: #da373c;
+    --danger-hover: #a12828;
+    --ok: #248046;
+    --err: #da373c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "gg sans", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .app { width: 100%; max-width: 760px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  header h1 { font-size: 22px; margin: 0; }
+  header .badge { font-size: 11px; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 999px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 14px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+  input[type="text"], input[type="password"], textarea, select {
+    width: 100%;
+    background: var(--field);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 220px; font-family: Consolas, Menlo, monospace; font-size: 13px; line-height: 1.5; }
+  .row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .row > * { flex: 1; }
+  .field { margin-bottom: 14px; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .tabs { display: flex; gap: 4px; background: var(--panel-2); border-radius: 8px; padding: 4px; margin-bottom: 16px; }
+  .tabs button { flex: 1; background: transparent; border: none; color: var(--muted); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; transition: background 0.15s, color 0.15s; }
+  .tabs button.active { background: var(--accent); color: #fff; }
+  .tabs button:not(.active):hover { background: #3a3d44; color: var(--text); }
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button.primary { background: var(--accent); color: #fff; border: none; padding: 11px 22px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+  button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+  button.danger { background: var(--danger); color: #fff; border: none; padding: 11px 22px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  button.danger:hover:not(:disabled) { background: var(--danger-hover); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 9px 14px; border-radius: 6px; font-size: 12px; font-family: inherit; cursor: pointer; }
+  button.ghost:hover { color: var(--text); border-color: var(--muted); }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer; user-select: none; }
+  .check input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .status { margin-top: 16px; padding: 12px 14px; border-radius: 8px; font-size: 13px; font-family: Consolas, Menlo, monospace; white-space: pre-wrap; word-break: break-word; display: none; border: 1px solid var(--border); background: var(--field); max-height: 260px; overflow: auto; }
+  .status.show { display: block; }
+  .status.ok { border-color: var(--ok); color: #a6e3a1; }
+  .status.err { border-color: var(--err); color: #f38ba8; }
+  .status.info { border-color: var(--accent); color: #b8c0ff; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>Discord Say Bot</h1>
+    <span class="badge">web</span>
+  </header>
+
+  <div class="card">
+    <h2>Connection</h2>
+
+    <div class="tabs" id="modeTabs">
+      <button data-mode="bot" class="active">Bot Token</button>
+      <button data-mode="webhook">Webhook</button>
+    </div>
+
+    <div id="botFields">
+      <div class="row">
+        <div>
+          <label for="channelId">Channel ID</label>
+          <input type="text" id="channelId" placeholder="1234567890123456789" />
+        </div>
+        <div>
+          <label for="botToken">Bot Token</label>
+          <input type="password" id="botToken" placeholder="MTIz...abc" />
+        </div>
+      </div>
+    </div>
+
+    <div id="webhookFields" class="hidden">
+      <div class="field">
+        <label for="webhookUrl">Webhook URL</label>
+        <input type="password" id="webhookUrl" placeholder="https://discord.com/api/webhooks/123/abc..." />
+        <div class="hint">Webhook URLs already contain their own token, no Authorization header is used.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Action</h2>
+
+    <div class="tabs" id="actionTabs">
+      <button data-action="send" class="active">Send</button>
+      <button data-action="edit">Edit</button>
+      <button data-action="delete">Delete</button>
+    </div>
+
+    <div id="messageIdRow" class="field hidden">
+      <label for="messageId">Message ID</label>
+      <input type="text" id="messageId" placeholder="1234567890123456789" />
+      <div class="hint">Required for Edit and Delete.</div>
+    </div>
+
+    <div id="payloadWrap">
+      <label for="payload">JSON Payload</label>
+      <textarea id="payload" spellcheck="false"></textarea>
+      <div class="hint">Anything the Discord message API accepts works here, content, embeds, components, etc.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="actions">
+      <button class="primary" id="runBtn">Run</button>
+      <button class="ghost" id="formatBtn">Format JSON</button>
+      <button class="ghost" id="exampleBtn">Load Example</button>
+      <button class="ghost" id="clearBtn">Clear Status</button>
+      <label class="check" style="margin-left:auto;">
+        <input type="checkbox" id="remember" />
+        Remember settings locally
+      </label>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+const state = {
+  mode: "bot",
+  action: "send",
+  busy: false,
+};
+
+const API_BASE = "https://discord.com/api/v10";
+const STORAGE_KEY = "discord-say-bot-web";
+
+const $ = (id) => document.getElementById(id);
+
+const els = {
+  modeTabs: $("modeTabs"),
+  actionTabs: $("actionTabs"),
+  botFields: $("botFields"),
+  webhookFields: $("webhookFields"),
+  channelId: $("channelId"),
+  botToken: $("botToken"),
+  webhookUrl: $("webhookUrl"),
+  messageIdRow: $("messageIdRow"),
+  messageId: $("messageId"),
+  payloadWrap: $("payloadWrap"),
+  payload: $("payload"),
+  runBtn: $("runBtn"),
+  formatBtn: $("formatBtn"),
+  exampleBtn: $("exampleBtn"),
+  clearBtn: $("clearBtn"),
+  remember: $("remember"),
+  status: $("status"),
+};
+
+const EXAMPLES = {
+  send: {
+    content: "Hello from the web edition!",
+    embeds: [
+      {
+        title: "Discord Say Bot",
+        description: "This message was sent from the browser.",
+        color: 5814783,
+      },
+    ],
+  },
+  edit: {
+    content: "This message has been edited.",
+  },
+  delete: null,
+};
+
+function setStatus(kind, text) {
+  els.status.className = "status show " + kind;
+  els.status.textContent = text;
+}
+
+function clearStatus() {
+  els.status.className = "status";
+  els.status.textContent = "";
+}
+
+function setBusy(busy) {
+  state.busy = busy;
+  els.runBtn.disabled = busy;
+  els.runBtn.textContent = busy ? "Working..." : "Run";
+}
+
+function selectTab(container, attr, value) {
+  [...container.querySelectorAll("button")].forEach((b) => {
+    b.classList.toggle("active", b.dataset[attr] === value);
+  });
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  selectTab(els.modeTabs, "mode", mode);
+  els.botFields.classList.toggle("hidden", mode !== "bot");
+  els.webhookFields.classList.toggle("hidden", mode !== "webhook");
+}
+
+function setAction(action) {
+  state.action = action;
+  selectTab(els.actionTabs, "action", action);
+
+  const needsId = action === "edit" || action === "delete";
+  els.messageIdRow.classList.toggle("hidden", !needsId);
+
+  const needsPayload = action !== "delete";
+  els.payloadWrap.classList.toggle("hidden", !needsPayload);
+
+  els.runBtn.classList.toggle("danger", action === "delete");
+  els.runBtn.classList.toggle("primary", action !== "delete");
+}
+
+els.modeTabs.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-mode]");
+  if (btn) setMode(btn.dataset.mode);
+});
+
+els.actionTabs.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (btn) setAction(btn.dataset.action);
+});
+
+function parsePayload() {
+  const raw = els.payload.value.trim();
+  if (!raw) throw new Error("Payload is empty.");
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    throw new Error("Invalid JSON: " + err.message);
+  }
+}
+
+function formatPayload() {
+  try {
+    const obj = parsePayload();
+    els.payload.value = JSON.stringify(obj, null, 2);
+    clearStatus();
+  } catch (err) {
+    setStatus("err", err.message);
+  }
+}
+
+function loadExample() {
+  const ex = EXAMPLES[state.action];
+  if (ex === null) {
+    setStatus("info", "Delete mode sends no payload.");
+    return;
+  }
+  els.payload.value = JSON.stringify(ex, null, 2);
+  clearStatus();
+}
+
+function requireInput(el, name) {
+  const v = el.value.trim();
+  if (!v) throw new Error(name + " is required.");
+  return v;
+}
+
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  const text = await res.text();
+  let body = text;
+  try {
+    body = JSON.parse(text);
+  } catch (err) {
+    body = text;
+  }
+  return { ok: res.ok, status: res.status, body };
+}
+
+function botHeaders() {
+  return {
+    "Authorization": "Bot " + requireInput(els.botToken, "Bot token"),
+    "Content-Type": "application/json",
+  };
+}
+
+function webhookBase() {
+  return requireInput(els.webhookUrl, "Webhook URL").replace(/\/+$/, "");
+}
+
+async function doSend() {
+  const payload = parsePayload();
+
+  if (state.mode === "bot") {
+    const channelId = requireInput(els.channelId, "Channel ID");
+    return apiFetch(API_BASE + "/channels/" + channelId + "/messages", {
+      method: "POST",
+      headers: botHeaders(),
+      body: JSON.stringify(payload),
+    });
+  } else {
+    return apiFetch(webhookBase() + "?wait=true", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  }
+}
+
+async function doEdit() {
+  const payload = parsePayload();
+  const messageId = requireInput(els.messageId, "Message ID");
+
+  if (state.mode === "bot") {
+    const channelId = requireInput(els.channelId, "Channel ID");
+    return apiFetch(API_BASE + "/channels/" + channelId + "/messages/" + messageId, {
+      method: "PATCH",
+      headers: botHeaders(),
+      body: JSON.stringify(payload),
+    });
+  } else {
+    return apiFetch(webhookBase() + "/messages/" + messageId, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  }
+}
+
+async function doDelete() {
+  const messageId = requireInput(els.messageId, "Message ID");
+
+  if (state.mode === "bot") {
+    const channelId = requireInput(els.channelId, "Channel ID");
+    return apiFetch(API_BASE + "/channels/" + channelId + "/messages/" + messageId, {
+      method: "DELETE",
+      headers: { "Authorization": "Bot " + requireInput(els.botToken, "Bot token") },
+    });
+  } else {
+    return apiFetch(webhookBase() + "/messages/" + messageId, {
+      method: "DELETE",
+    });
+  }
+}
+
+async function run() {
+  if (state.busy) return;
+  clearStatus();
+  setBusy(true);
+
+  try {
+    let result;
+    let verb;
+
+    if (state.action === "send") {
+      result = await doSend();
+      verb = "sent";
+    } else if (state.action === "edit") {
+      result = await doEdit();
+      verb = "edited";
+    } else {
+      result = await doDelete();
+      verb = "deleted";
+    }
+
+    if (result.ok) {
+      let extra = "";
+      if (state.action === "send" && result.body && result.body.id) {
+        extra = "\nMessage ID: " + result.body.id;
+      }
+      setStatus("ok", "Message " + verb + " successfully!" + extra);
+    } else {
+      const pretty = typeof result.body === "string"
+        ? result.body
+        : JSON.stringify(result.body, null, 2);
+      setStatus("err", "Failed to " + state.action + " message (" + result.status + ")\n\n" + pretty);
+    }
+  } catch (err) {
+    setStatus("err", err.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function saveSettings() {
+  if (!els.remember.checked) {
+    localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+  const data = {
+    mode: state.mode,
+    action: state.action,
+    channelId: els.channelId.value,
+    botToken: els.botToken.value,
+    webhookUrl: els.webhookUrl.value,
+    messageId: els.messageId.value,
+    payload: els.payload.value,
+  };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (err) {
+    return;
+  }
+}
+
+function loadSettings() {
+  let raw;
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch (err) {
+    return;
+  }
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    els.remember.checked = true;
+    if (data.channelId) els.channelId.value = data.channelId;
+    if (data.botToken) els.botToken.value = data.botToken;
+    if (data.webhookUrl) els.webhookUrl.value = data.webhookUrl;
+    if (data.messageId) els.messageId.value = data.messageId;
+    if (data.payload) els.payload.value = data.payload;
+    if (data.mode) setMode(data.mode);
+    if (data.action) setAction(data.action);
+  } catch (err) {
+    return;
+  }
+}
+
+els.runBtn.addEventListener("click", run);
+els.formatBtn.addEventListener("click", formatPayload);
+els.exampleBtn.addEventListener("click", loadExample);
+els.clearBtn.addEventListener("click", clearStatus);
+els.remember.addEventListener("change", saveSettings);
+["input", "change"].forEach((evt) => {
+  document.addEventListener(evt, saveSettings, true);
+});
+
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    e.preventDefault();
+    run();
+  }
+});
+
+loadSettings();
+setMode(state.mode);
+setAction(state.action);
+loadExample();
+</script>
+</body>
+</html>
