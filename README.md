@@ -1,10 +1,16 @@
-# Discord Say Bot 
+# Discord Say Bot
 
-A simple Python script that sends a message to a Discord channel using a bot token and a JSON payload file.
+A simple Python script that sends, edits, or deletes a Discord message using either a bot token or a webhook URL, with the full payload defined in a local JSON file.
 
 ## What It Does
 
-This script reads a message definition from a local JSON file (`message.json`) and posts it to a specified Discord channel via the Discord REST API. It supports everything the Discord message API supports plain text, embeds, components (buttons, select menus), attachments, and more since the entire payload is defined in the JSON file.
+The script reads a Discord message payload from a local JSON file (`message.json` by default) and:
+
+- **Sends** a new message to a channel (via bot or webhook).
+- **Edits** an existing message (via bot or webhook).
+- **Deletes** an existing message (via bot or webhook).
+
+Because the entire payload comes from the JSON file, everything the Discord message API supports works out of the box: plain text, embeds, components (buttons, select menus), attachments, and more.
 
 ## Requirements
 
@@ -18,44 +24,58 @@ pip install requests
 ```
 
 ## Setup
-**Steps to Reproduce**
-### 1. Create a Discord Bot
+
+### 1. Create a Discord Bot (only if not using a webhook)
 
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
 2. Click **New Application**, give it a name, and create it.
 3. Go to the **Bot** tab and click **Add Bot**.
-4. Copy the **Bot Token** you'll need it.
+4. Copy the **Bot Token** — you'll need it.
 5. Under **Privileged Gateway Intents**, enable any intents you need (not required for simply sending messages).
 
 ### 2. Invite the Bot to Your Server
 
 1. In the Developer Portal, go to **OAuth2 → URL Generator**.
 2. Select the `bot` scope.
-
-4. Under **Bot Permissions**, select at minimum:
-   - `Administrator` (all permissions, very risky, use at your own risk)
-   - `Manage Channels` (necessary if the bot will send a message to a locked or read-only channels)
-   - `Manage Messages` (not important, but you can add it anyway - maybe risky as it allows to delete messages) 
+3. Under **Bot Permissions**, select at minimum:
    - `Send Messages`
    - `Embed Links` (if you plan to send embeds)
    - `Attach Files` (if you plan to send attachments)
-5. Copy the generated URL, open it in your browser, and add the bot to your server.
+   - `Manage Messages` (required to edit or delete messages sent by other users; not needed for the bot's own messages)
+   - `Manage Channels` (only needed if the bot will post in a locked/read-only channel)
+4. Copy the generated URL, open it in your browser, and add the bot to your server.
 
-### 3. Get the Target Channel ID
+> [!WARNING]
+> Avoid granting `Administrator` unless you fully trust the bot. It is not required for any feature of this script.
+
+### 3. Get the Target Channel ID (bot mode only)
 
 1. In Discord, enable **Developer Mode** (User Settings → Advanced → Developer Mode).
-2. Right-click the channel you want to send messages to and select **Copy Channel ID**.
+2. Right-click the channel you want to target and select **Copy Channel ID**.
 
-### 4. Configure the Script
+### 4. (Optional) Create a Webhook
 
-Open the `sendjson.py` and replace the placeholders:
+1. In Discord, open the target channel's settings → **Integrations → Webhooks**.
+2. Click **New Webhook**, name it, pick a channel, and copy the **Webhook URL**.
+3. Paste it into `WEBHOOK_URL` in the script.
 
-> [!WARNING]  
-> Never share your bot token or commit it to a public repository. Anyone with the token can control your bot.
+### 5. Configure the Script
 
-### 5. Create `message.json`
+Open `sendjson.py` and replace the placeholders:
 
-The script reads the entire Discord message payload from `message.json`. The contents of that file are sent as-is to the API.
+| Constant | Description |
+|---|---|
+| `CHANNEL_ID` | Target channel ID (bot mode). |
+| `BOT_TOKEN` | Your bot token (bot mode). |
+| `WEBHOOK_URL` | Webhook URL (webhook mode). Leave empty to use the bot. |
+| `MESSAGE_ID` | Required for `--edit` and `--delete`. |
+
+> [!WARNING]
+> Never share your bot token or webhook URL, and never commit them to a public repository. Anyone with them can control your bot or webhook.
+
+### 6. Create `message.json`
+
+The script reads the entire Discord message payload from `message.json`. The contents are sent as-is.
 
 **Simple text example:**
 
@@ -84,7 +104,7 @@ The script reads the entire Discord message payload from `message.json`. The con
 
 ```json
 {
-  "content": "Follow the discord guidelines!",
+  "content": "Follow the Discord guidelines!",
   "components": [
     {
       "type": 1,
@@ -105,10 +125,40 @@ For the full schema, see the [Discord Message API documentation](https://discord
 
 ## Usage
 
-Once configured, simply run:
+Send a new message (default):
 
 ```bash
 python sendjson.py
+```
+
+Send a new message explicitly:
+
+```bash
+python sendjson.py --send
+```
+
+Edit an existing message (requires `MESSAGE_ID`):
+
+```bash
+python sendjson.py --edit
+```
+
+Delete an existing message (requires `MESSAGE_ID`):
+
+```bash
+python sendjson.py --delete
+```
+
+Force webhook mode (overrides the bot token):
+
+```bash
+python sendjson.py --send --webhook
+```
+
+Use a different payload file:
+
+```bash
+python sendjson.py --file other_message.json
 ```
 
 Expected output on success:
@@ -121,22 +171,38 @@ On failure, the script prints the HTTP status code and the error response body f
 
 ## How It Works
 
-1. Loads `message.json` into a Python dictionary.
-2. Sends a `POST` request to `https://discord.com/api/v10/channels/{CHANNEL_ID}/messages` using your bot token for authentication.
-3. Checks the response, a `200` or `201` status means the message was delivered.
+**Bot mode (`--send`, `--edit`, `--delete`):**
+
+- `POST   https://discord.com/api/v10/channels/{CHANNEL_ID}/messages`
+- `PATCH  https://discord.com/api/v10/channels/{CHANNEL_ID}/messages/{MESSAGE_ID}`
+- `DELETE https://discord.com/api/v10/channels/{CHANNEL_ID}/messages/{MESSAGE_ID}`
+
+Authentication header: `Authorization: Bot {BOT_TOKEN}`.
+
+**Webhook mode:**
+
+- `POST   {WEBHOOK_URL}`
+- `PATCH  {WEBHOOK_URL}/messages/{MESSAGE_ID}`
+- `DELETE {WEBHOOK_URL}/messages/{MESSAGE_ID}`
+
+No `Authorization` header is used the webhook URL itself contains the token.
+
+A `200`, `201`, or `204` response means the operation succeeded.
 
 ## Troubleshooting
 
 | Status Code | Meaning | Fix |
 |---|---|---|
-| `401 Unauthorized` | Invalid or missing bot token | Double-check `BOT_TOKEN` |
-| `403 Forbidden` | Bot lacks permission in that channel | Give the bot `Send Messages` permission |
-| `404 Not Found` | Wrong channel ID | Verify `CHANNEL_ID` |
+| `401 Unauthorized` | Invalid or missing bot token / webhook URL | Double-check `BOT_TOKEN` or `WEBHOOK_URL` |
+| `403 Forbidden` | Bot lacks permission in that channel | Grant `Send Messages` (and `Manage Messages` for edit/delete on others' messages) |
+| `404 Not Found` | Wrong channel ID, message ID, or webhook URL | Verify `CHANNEL_ID`, `MESSAGE_ID`, or `WEBHOOK_URL` |
 | `400 Bad Request` | Malformed JSON payload | Validate `message.json` against the API docs |
 | `429 Too Many Requests` | Rate limited | Wait and retry; Discord will tell you how long |
 
 ## Notes
 
-- The script posts a **new** message every time it runs. It does not edit or delete messages. (might come in future)
-- To send the same message repeatedly, just run the script again.
-- To change the message, edit `message.json` no code changes required.
+- The script runs once per invocation — it does not stay running or listen for events.
+- `--edit` replaces the message content with whatever is in the JSON file. To keep existing fields, use Discord's `PATCH` semantics (only the fields you provide are changed).
+- `--delete` ignores the JSON file entirely; `MESSAGE_ID` is the only input needed.
+- Webhooks cannot edit or delete arbitrary user messages — only messages they posted.
+- To change the message, edit `message.json` — no code changes required.
