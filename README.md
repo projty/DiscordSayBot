@@ -2,6 +2,9 @@
 
 A simple Python script that sends, edits, or deletes a Discord message using either a bot token or a webhook URL, with the full payload defined in a local JSON file.
 
+# Not working?
+- Click [here](https://projty.github.io/DiscordSayBot/) to view the website version
+
 ## What It Does
 
 The script reads a Discord message payload from a local JSON file (`message.json` by default) and:
