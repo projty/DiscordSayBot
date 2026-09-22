@@ -5,7 +5,7 @@ import json
 CHANNEL_ID = "1234356789123456799"   # replace with your channel ID where you want the message to be sent
 BOT_TOKEN = "YOUR_BOT_TOKEN_HERE" # replace with your bot token
 
-# Don't make modifications in the code beneath this, unless you know what you are doing 
+# Don't make modifications in the code beneath this, unless you know what you are doing
 
 JSON_FILE = "message.json"
 url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
@@ -25,4 +25,4 @@ else:
     print(f"Failed to send message ({response.status_code})")
     print(response.text)
     
-# Discord Say Bot 1.0.8
+# Discord Say Bot 1.0.9
