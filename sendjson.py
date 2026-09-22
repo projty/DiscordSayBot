@@ -1,11 +1,12 @@
 import requests
 import json
-
+# Discord Say Bot 1.0.6
 # configuration
 CHANNEL_ID = "1234356789123456799"   # replace with your target channel ID
 BOT_TOKEN = "YOUR_BOT_TOKEN_HERE" # replace with your bot token
 
-# leave this alone
+# Don't make modifications in the code beneath this, unless you know what you are doing
+
 JSON_FILE = "message.json"
 url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
 headers = {
