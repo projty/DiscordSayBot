@@ -202,7 +202,7 @@ A `200`, `201`, or `204` response means the operation succeeded.
 | `400 Bad Request` | Malformed JSON payload | Validate `message.json` against the API docs |
 | `429 Too Many Requests` | Rate limited | Wait and retry; Discord will tell you how long |
 
-Do you think [discord](https://discord.com) is down? [Click here](https://status.discord.com) for information.
+Do you think [Discord™](https://discord.com) is down? [Click here](https://discordstatus.com/) for information.
 
 ## Notes
 
