@@ -3,10 +3,9 @@ import json
 import sys
 import os
 import argparse
+# Discord Say Bot 1.1.5
+# Config
 
-# ============================================================
-# Configuration
-# ============================================================
 CHANNEL_ID = "1234356789123456799"   # Replace with your target channel ID
 BOT_TOKEN  = "YOUR_BOT_TOKEN_HERE"   # Replace with your bot token
 WEBHOOK_URL = ""                     # Optional: fill in to use a webhook instead of a bot
