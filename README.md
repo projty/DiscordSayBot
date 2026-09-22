@@ -201,8 +201,8 @@ A `200`, `201`, or `204` response means the operation succeeded.
 
 ## Notes
 
-- The script runs once per invocation — it does not stay running or listen for events.
+- The script runs once per invocation it does not stay running or listen for events.
 - `--edit` replaces the message content with whatever is in the JSON file. To keep existing fields, use Discord's `PATCH` semantics (only the fields you provide are changed).
 - `--delete` ignores the JSON file entirely; `MESSAGE_ID` is the only input needed.
-- Webhooks cannot edit or delete arbitrary user messages — only messages they posted.
-- To change the message, edit `message.json` — no code changes required.
+- Webhooks cannot edit or delete arbitrary user messages only messages they posted.
+- To change the message, edit `message.json` no code changes required.
