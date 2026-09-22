@@ -3,7 +3,7 @@ import json
 import sys
 import os
 import argparse
-# Discord Say Bot 1.1.5
+# Discord Say Bot 1.1.6
 # Config
 
 CHANNEL_ID = "1234356789123456799"   # Replace with your target channel ID
