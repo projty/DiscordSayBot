@@ -1,4 +1,4 @@
-# Discord Say Bot
+# Discord Say Bot 
 
 A simple Python script that sends a message to a Discord channel using a bot token and a JSON payload file.
 
@@ -8,7 +8,7 @@ This script reads a message definition from a local JSON file (`message.json`) a
 
 ## Requirements
 
-- Python 3.7+
+- [Python 3.7+](https://www.python.org/downloads/)
 - The [`requests`](https://pypi.org/project/requests/) library
 
 Install dependencies with:
