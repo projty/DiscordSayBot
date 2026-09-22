@@ -2,7 +2,7 @@ import requests
 import json
 
 # configuration 
-CHANNEL_ID = "1234356789123456799"   # replace with your target channel ID
+CHANNEL_ID = "1234356789123456799"   # replace with your channel ID where you want the message to be sent
 BOT_TOKEN = "YOUR_BOT_TOKEN_HERE" # replace with your bot token
 
 # Don't make modifications in the code beneath this, unless you know what you are doing 
@@ -25,4 +25,4 @@ else:
     print(f"Failed to send message ({response.status_code})")
     print(response.text)
     
-# Discord Say Bot 1.0.6
+# Discord Say Bot 1.0.8
